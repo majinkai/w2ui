@@ -366,8 +366,8 @@
 		getItemHTML: function (item) {
 			var html = '';
 
-			if (typeof item.caption !== 'undefined') item.text = item.caption;
-			if (typeof item.hint === 'undefined') item.hint = '';
+			if (typeof item.caption !== 'undefined') item.text = w2utils.lang(item.caption);
+			if (typeof item.hint === 'undefined') item.hint = ''; item.hint = w2utils.lang(item.hint);
 			if (typeof item.text === 'undefined') item.text = '';
 
 			switch (item.type) {

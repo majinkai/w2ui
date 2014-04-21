@@ -750,7 +750,7 @@ var w2confirm = function (obj, callBack) {
 			showClose	: false,
 			body		: '<div class="w2ui-centered" style="font-size: 13px;">' + msg + '</div>',
 			buttons		: '<button id="No" class="w2ui-popup-btn btn '+w2confirm_no_class+'" style="'+w2confirm_no_style+'">' + w2utils.lang(w2confirm_no_text) + '</button>' + 
-                          '<button id="Yes" class="w2ui-popup-btn btn btn-blue '+w2confirm_yes_class+'" style="'+w2confirm_yes_style+'">' + w2utils.lang(w2confirm_yes_text) + '</button>'
+                          '<button id="Yes" class="w2ui-popup-btn btn btn-blue '+w2confirm_yes_class+'" style="'+w2confirm_yes_style+'">' + w2utils.lang(w2confirm_yes_text) + '</button>',
 			onOpen: function (event) {
 				event.onComplete = function () {
 					$('#w2ui-popup .w2ui-popup-btn').on('click', function (event) {

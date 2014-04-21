@@ -98,6 +98,7 @@ var w2utils = (function () {
 				"between" : "范围",
 				"Add new record" : "添加新数据",
 				"Add New" : "添加",
+				"Edit selected record" : "编辑选中数据",
 				"Delete selected records" : "删除选中数据",
 				"Delete" : "删除",
 				"Save changed records" : "保存已修改数据",

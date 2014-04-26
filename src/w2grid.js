@@ -583,7 +583,7 @@
                 return ret;
             });
             time = (new Date()).getTime() - time;
-            if (silent !== true) setTimeout(function () { obj.status(w2utils.lang(''Sorting took ') + time/1000 + w2utils.lang('' sec')); }, 10);
+            if (silent !== true) setTimeout(function () { obj.status(w2utils.lang('Sorting took ') + time/1000 + w2utils.lang(' sec')); }, 10);
             return time;
         },
 
@@ -678,7 +678,7 @@
             }
             this.buffered = this.total;
             time = (new Date()).getTime() - time;
-            if (silent !== true) setTimeout(function () { obj.status(w2utils.lang(''Search took ') + time/1000 + w2utils.lang('' sec')); }, 10);
+            if (silent !== true) setTimeout(function () { obj.status(w2utils.lang('Search took ') + time/1000 + w2utils.lang(' sec')); }, 10);
             return time;
         },
 

@@ -3,8 +3,8 @@ var w2ui  = w2ui  || {};
 var w2obj = w2obj || {}; // expose object to be able to overwrite default functions
 
 /************************************************
-*   Library: Web 2.0 UI for jQuery
-*   - Following objects are defines
+*  Library: Web 2.0 UI for jQuery
+*  - Following objects are defines
 *        - w2ui             - object that will contain all widgets
 *        - w2obj            - object with widget prototypes
 *        - w2utils          - basic utilities
@@ -16,37 +16,41 @@ var w2obj = w2obj || {}; // expose object to be able to overwrite default functi
 *        - $().w2menu       - menu plugin
 *        - w2utils.event    - generic event object
 *        - w2utils.keyboard - object for keyboard navigation
-*   - Dependencies: jQuery
+*  - Dependencies: jQuery
 *
 * == NICE TO HAVE ==
-*    - date has problems in FF new Date('yyyy-mm-dd') breaks
-*    - bug: w2utils.formatDate('2011-31-01', 'yyyy-dd-mm'); - wrong foratter
-*    - overlay should be displayed where more space (on top or on bottom)
-*    - write and article how to replace certain framework functions
-*    - format date and time is buggy
-*    - onComplete should pass widget as context (this)
-*    - add maxHeight for the w2menu
-*    - user localization from another lib (make it generic), https://github.com/jquery/globalize#readme
-*    - hidden and disabled in menus
-*    - isTime should support seconds
-*     - TEST On IOS
+*   - date has problems in FF new Date('yyyy-mm-dd') breaks
+*   - bug: w2utils.formatDate('2011-31-01', 'yyyy-dd-mm'); - wrong foratter
+*   - overlay should be displayed where more space (on top or on bottom)
+*   - write and article how to replace certain framework functions
+*   - format date and time is buggy
+*   - onComplete should pass widget as context (this)
+*   - add maxHeight for the w2menu
+*   - user localization from another lib (make it generic), https://github.com/jquery/globalize#readme
+*   - hidden and disabled in menus
+*   - isTime should support seconds
+*   - TEST On IOS
 *
 * == 1.4 changes
-*    - lock(box, options) || lock(box, msg, spinner)
-*    - updated age() date(), formatDate(), formatTime() - input format either '2013/12/21 19:03:59 PST' or unix timestamp
-*    - formatNumer(num, groupSymbol) - added new param
-*    - improved localization support (currency prefix, suffix, numbger group symbol)
-*    - improoved overlays (better positioning, refresh, etc.)
-*    - multiple overlay at the same time (if it has name)
-*    - overlay options.css removed, I have added options.style
-*    - ability to open searchable w2menu
-*     - w2confirm({})
+*   - lock(box, options) || lock(box, msg, spinner)
+*   - updated age() date(), formatDate(), formatTime() - input format either '2013/12/21 19:03:59 PST' or unix timestamp
+*   - formatNumer(num, groupSymbol) - added new param
+*   - improved localization support (currency prefix, suffix, numbger group symbol)
+*   - improoved overlays (better positioning, refresh, etc.)
+*   - multiple overlay at the same time (if it has name)
+*   - overlay options.css removed, I have added options.style
+*   - ability to open searchable w2menu
+*   - w2confirm({})
+*   - dep. RESTfull
+*   - added: dataType (allows JSON payload)
+*   - added: parse route
 *
 ************************************************/
 
 var w2utils = (function () {
     var tmp = {}; // for some temp variables
     var obj = {
+        version  : '1.4.x',
         settings : {
             "locale"            : "en-us",
             "date_format"       : "m/d/yyyy",
@@ -60,38 +64,39 @@ var w2utils = (function () {
             "fullmonths"        : ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
             "shortdays"         : ["M", "T", "W", "T", "F", "S", "S"],
             "fulldays"          : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-            "RESTfull"          : false,
-            "phrases"           : {} // empty object for english phrases
+            "dataType"          : 'HTTP',   // can be HTTP, RESTFULL, JSON (case sensative)
+            "phrases"           : {}        // empty object for english phrases
         },
-        isInt          : isInt,
-        isFloat        : isFloat,
-        isMoney        : isMoney,
-        isHex          : isHex,
-        isAlphaNumeric : isAlphaNumeric,
-        isEmail        : isEmail,
-        isDate         : isDate,
-        isTime         : isTime,
-        age            : age,
-        date           : date,
-        size           : size,
-        formatNumber   : formatNumber,
-        formatDate     : formatDate,
-        formatTime     : formatTime,
-        formatDateTime : formatDateTime,
-        stripTags      : stripTags,
-        encodeTags     : encodeTags,
-        escapeId       : escapeId,
-        base64encode   : base64encode,
-        base64decode   : base64decode,
-        transition     : transition,
-        lock           : lock,
-        unlock         : unlock,
-        lang           : lang,
-        locale         : locale,
-        getSize        : getSize,
-        scrollBarSize  : scrollBarSize,
-        checkName      : checkName,
-        checkUniqueId  : checkUniqueId
+        isInt           : isInt,
+        isFloat         : isFloat,
+        isMoney         : isMoney,
+        isHex           : isHex,
+        isAlphaNumeric  : isAlphaNumeric,
+        isEmail         : isEmail,
+        isDate          : isDate,
+        isTime          : isTime,
+        age             : age,
+        date            : date,
+        size            : size,
+        formatNumber    : formatNumber,
+        formatDate      : formatDate,
+        formatTime      : formatTime,
+        formatDateTime  : formatDateTime,
+        stripTags       : stripTags,
+        encodeTags      : encodeTags,
+        escapeId        : escapeId,
+        base64encode    : base64encode,
+        base64decode    : base64decode,
+        transition      : transition,
+        lock            : lock,
+        unlock          : unlock,
+        lang            : lang,
+        locale          : locale,
+        getSize         : getSize,
+        scrollBarSize   : scrollBarSize,
+        checkName       : checkName,
+        checkUniqueId   : checkUniqueId,
+        parseRoute      : parseRoute
     };
     return obj;
 
@@ -865,6 +870,25 @@ var w2utils = (function () {
         }
         return true;
     }
+
+    function parseRoute(route) {
+        var keys = [];
+        var path = route
+            .replace(/\/\(/g, '(?:/')
+            .replace(/\+/g, '__plus__')
+            .replace(/(\/)?(\.)?:(\w+)(?:(\(.*?\)))?(\?)?/g, function(_, slash, format, key, capture, optional) {
+                keys.push({ name: key, optional: !! optional });
+                slash = slash || '';
+                return '' + (optional ? '' : slash) + '(?:' + (optional ? slash : '') + (format || '') + (capture || (format && '([^/.]+?)' || '([^/]+?)')) + ')' + (optional || '');
+            })
+            .replace(/([\/.])/g, '\\$1')
+            .replace(/__plus__/g, '(.+)')
+            .replace(/\*/g, '(.*)');
+        return {
+            path  : new RegExp('^' + path + '$', 'i'),
+            keys  : keys
+        };
+    }
 })();
 
 /***********************************************************
@@ -1611,38 +1635,38 @@ w2utils.keyboard = (function (obj) {
 *   - Dependencies: jQuery, w2utils
 *
 * == NICE TO HAVE ==
-*    - upload (regular files)
-*    - BUG with prefix/postfix and arrows (test in different contexts)
-*    - prefix and suffix are slow (100ms or so)
-*    - multiple date selection
-*    - month selection, year selections
-*    - arrows no longer work (for int)
-*    - add postData for autocomplete
-*    - form to support custom types
-*    - bug: if input is hidden and then enum is applied, then when it becomes visible, it will be 110px
+*   - upload (regular files)
+*   - BUG with prefix/postfix and arrows (test in different contexts)
+*   - prefix and suffix are slow (100ms or so)
+*   - multiple date selection
+*   - month selection, year selections
+*   - arrows no longer work (for int)
+*   - add postData for autocomplete
+*   - form to support custom types
+*   - bug: if input is hidden and then enum is applied, then when it becomes visible, it will be 110px
 *
 * == 1.4 Changes ==
-*    - select - for select, list - for drop down (needs this in grid)
-*    - $().addType() - changes sligtly (this.el)
-*    - $().removeType() - new method
-*    - enum add events: onLoad, onRequest, onDelete,  for already selected elements
-*    - enum - refresh happens on each key press even if not needed (for speed)
-*    - rewrire everythin in objects (w2ftext, w2fenum, w2fdate)
-*    - render calendar to the div
-*    - added .btn with colors
-*    - added enum.style and file.style attributes
-*    - test all fields as Read Only
-*    - added openOnFocus
-*    - deprecated -- change: showAll -> applyFilter
-*    - color: select with keyboard
-*    - enum: addNew event
-*    - added icon and onIconClick
-*    - new: clearCache
-*    - easy way to add icons
-*    - easy way to navigate month/year in dates
-*    - added step for numeric inputs
-*    - changed prepopulate -> minLength
-*    - added options.postData
+*   - select - for select, list - for drop down (needs this in grid)
+*   - $().addType() - changes sligtly (this.el)
+*   - $().removeType() - new method
+*   - enum add events: onLoad, onRequest, onDelete,  for already selected elements
+*   - enum - refresh happens on each key press even if not needed (for speed)
+*   - rewrire everythin in objects (w2ftext, w2fenum, w2fdate)
+*   - render calendar to the div
+*   - added .btn with colors
+*   - added enum.style and file.style attributes
+*   - test all fields as Read Only
+*   - added openOnFocus
+*   - deprecated -- change: showAll -> applyFilter
+*   - color: select with keyboard
+*   - enum: addNew event
+*   - added icon and onIconClick
+*   - new: clearCache
+*   - easy way to add icons
+*   - easy way to navigate month/year in dates
+*   - added step for numeric inputs
+*   - changed prepopulate -> minLength
+*   - added options.postData
 *
 ************************************************************************/
 
@@ -1654,17 +1678,17 @@ w2utils.keyboard = (function (obj) {
         this.helpers     = {}; // object or helper elements
         this.type        = options.type || 'text';
         this.options     = $.extend(true, {}, options);
-        this.onSearch    = options.onSearch        || null;
-        this.onRequest   = options.onRequest        || null;
-        this.onLoad      = options.onLoad        || null;
-        this.onError     = options.onError        || null;
-        this.onClick     = options.onClick        || null;
-        this.onAdd       = options.onAdd            || null;
-        this.onNew       = options.onNew            || null;
-        this.onRemove    = options.onRemove        || null;
-        this.onMouseOver = options.onMouseOver    || null;
-        this.onMouseOut  = options.onMouseOut    || null;
-        this.onIconClick = options.onIconClick    || null;
+        this.onSearch    = options.onSearch    || null;
+        this.onRequest   = options.onRequest   || null;
+        this.onLoad      = options.onLoad      || null;
+        this.onError     = options.onError     || null;
+        this.onClick     = options.onClick     || null;
+        this.onAdd       = options.onAdd       || null;
+        this.onNew       = options.onNew       || null;
+        this.onRemove    = options.onRemove    || null;
+        this.onMouseOver = options.onMouseOver || null;
+        this.onMouseOut  = options.onMouseOut  || null;
+        this.onIconClick = options.onIconClick || null;
         this.tmp         = {}; // temp object
         // clean up some options
         delete this.options.type;
@@ -2008,7 +2032,7 @@ w2utils.keyboard = (function (obj) {
                         onAdd         : null,     // when an item is added
                         onRemove      : null,     // when an item is removed
                         onMouseOver   : null,     // when an item is mouse over
-                        onMouseOut    : null,     // when an item is mouse out
+                        onMouseOut    : null      // when an item is mouse out
                     };
                     options = $.extend({}, defaults, options, {
                         align         : 'both',    // same width as control
@@ -2067,8 +2091,11 @@ w2utils.keyboard = (function (obj) {
             if (this.type == 'list') {
                 $(this.el).removeClass('w2ui-select');
             }
+            if (['date', 'time'].indexOf(this.type) != -1) {
+                if ($(this.el).attr('placeholder') == options.format) $(this.el).attr('placeholder', '');
+            }
             this.type = 'clear';
-            var tmp      = $(this.el).data('tmp');
+            var tmp = $(this.el).data('tmp');
             if (!this.tmp) return;
             // restore paddings
             if (typeof tmp != 'undefined') {
@@ -2807,15 +2834,22 @@ w2utils.keyboard = (function (obj) {
                     $.extend(postData, options.postData);
                     var eventData = obj.trigger({ phase: 'before', type: 'request', target: obj.el, url: url, postData: postData });
                     if (eventData.isCancelled === true) return;
-                    url         = eventData.url;
+                    url      = eventData.url;
                     postData = eventData.postData;
                     // console.log('REMOTE SEARCH:', search);
                     if (obj.tmp.xhr) obj.tmp.xhr.abort();
-                    obj.tmp.xhr = $.ajax({
-                            type : 'POST',
-                            url  : url,
-                            data : postData
-                        })
+                    var ajaxOptions = {
+                        type     : 'GET',
+                        url      : url,
+                        data     : postData,
+                        dataType : 'JSON' // expected from server
+                    };
+                    if (w2utils.settings.dataType == 'JSON') {
+                        ajaxOptions.type        = 'POST';
+                        ajaxOptions.data        = JSON.stringify(ajaxOptions.data);
+                        ajaxOptions.contentType = 'application/json';
+                    }
+                    obj.tmp.xhr = $.ajax(ajaxOptions)
                         .done(function (data, status, xhr) {
                             // trigger event
                             var eventData2 = obj.trigger({ phase: 'before', type: 'load', target: obj.el, search: postData.search, data: data, xhr: xhr });
@@ -2840,13 +2874,15 @@ w2utils.keyboard = (function (obj) {
                             // event after
                             obj.trigger($.extend(eventData2, { phase: 'after' }));
                         })
-                        .error(function (xhr, status, exceptionThrown) {
+                        .fail(function (xhr, status, error) {
                             // trigger event
-                            var errorObj = { status: status, exceptionThrown: exceptionThrown, rawResponseText: xhr.responseText };
+                            var errorObj = { status: status, error: error, rawResponseText: xhr.responseText };
                             var eventData2 = obj.trigger({ phase: 'before', type: 'error', target: obj.el, search: search, error: errorObj, xhr: xhr });
                             if (eventData2.isCancelled === true) return;
                             // default behavior
-                            console.log('ERROR: server communication failed. The server should return', { status: 'success', items: [{ id: 1, text: 'item' }] }, ', instead the AJAX request produced this: ', errorObj);
+                            console.log('ERROR: server communication failed. The server should return', 
+                                { status: 'success', items: [{ id: 1, text: 'item' }] }, 'OR', { status: 'error', message: 'error message' },
+                                ', instead the AJAX request produced this: ', errorObj);
                             // reset stats
                             obj.clearCache();
                             // event after
@@ -3350,7 +3386,7 @@ w2utils.keyboard = (function (obj) {
                     "margin-top"    : $(obj.el).css('margin-top'),
                     "margin-left"   : (parseInt($(obj.el).css('margin-left')) + parseInt($(obj.el).css('padding-left'))) + 'px',
                     "margin-bottom" : $(obj.el).css('margin-bottom'),
-                    "margin-right"  : $(obj.el).css('margin-right'),
+                    "margin-right"  : $(obj.el).css('margin-right')
                 })
                 .find('input')
                 .css({

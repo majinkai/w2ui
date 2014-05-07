@@ -1,22 +1,22 @@
 /************************************************************************
-*    Library: Web 2.0 UI for jQuery (using prototypical inheritance)
-*    - Following objects defined
+*   Library: Web 2.0 UI for jQuery (using prototypical inheritance)
+*   - Following objects defined
 *        - w2layout        - layout widget
 *        - $().w2layout    - jQuery wrapper
-*    - Dependencies: jQuery, w2utils, w2toolbar, w2tabs
+*   - Dependencies: jQuery, w2utils, w2toolbar, w2tabs
 *
 * == NICE TO HAVE ==
-*    - onResize for the panel
-*    - add more panel title positions (left=rotated, right=rotated, bottom)
-*    - bug: resizer is visible (and onHover) when panel is hidden.
+*   - onResize for the panel
+*   - add more panel title positions (left=rotated, right=rotated, bottom)
+*   - bug: resizer is visible (and onHover) when panel is hidden.
 *
 * == 1.4 changes
-*    - deleted getSelection().removeAllRanges() - see https://github.com/vitmalina/w2ui/issues/323
-*    - added panel title
-*    - added panel.maxSize property
-*    - fixed resize bugs
-*    - BUG resize problems (resizer flashes, not very snappy, % should stay in percent)
-*    - added onResizerClick event
+*   - deleted getSelection().removeAllRanges() - see https://github.com/vitmalina/w2ui/issues/323
+*   - added panel title
+*   - added panel.maxSize property
+*   - fixed resize bugs
+*   - BUG resize problems (resizer flashes, not very snappy, % should stay in percent)
+*   - added onResizerClick event
 *
 ************************************************************************/
 
@@ -204,14 +204,14 @@
         load: function (panel, url, transition, onLoad) {
             var obj = this;
             if (panel == 'css') {
-                $.get(url, function (data, status, xhr) {
+                $.get(url, function (data, status, xhr) { // should always be $.get as it is template
                     obj.content(panel, xhr.responseText);
                     if (onLoad) onLoad();
                 });
                 return true;
             }
             if (this.get(panel) !== null) {
-                $.get(url, function (data, status, xhr) {
+                $.get(url, function (data, status, xhr) { // should always be $.get as it is template
                     obj.content(panel, xhr.responseText, transition);
                     if (onLoad) onLoad();
                     // IE Hack

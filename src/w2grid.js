@@ -3,52 +3,52 @@
 *   - Following objects defined
 *        - w2grid        - grid widget
 *        - $().w2grid    - jQuery wrapper
-*    - Dependencies: jQuery, w2utils, w2toolbar, w2fields, w2alert, w2confirm
+*   - Dependencies: jQuery, w2utils, w2toolbar, w2fields, w2alert, w2confirm
 *
 * == NICE TO HAVE ==
-*    - frozen columns
-*    - add colspans
-*    - get rid of this.buffered
-*    - allow this.total to be unknown (-1)
-*    - column autosize based on largest content
-*    - save grid state into localStorage and restore
-*    - easy bubbles in the grid
-*    - More than 2 layers of header groups
-*    - reorder columns/records
-*    - hidden searches could not be clearned by the user
-*    - problem with .set() and arrays, array get extended too, but should be replaced
-*    - move events into prototype
-*    - add grid.focus()
-*    - add showExtra, KickIn Infinite scroll when so many records
-*    - after edit stay on the same record option
+*   - frozen columns
+*   - add colspans
+*   - get rid of this.buffered
+*   - allow this.total to be unknown (-1)
+*   - column autosize based on largest content
+*   - save grid state into localStorage and restore
+*   - easy bubbles in the grid
+*   - More than 2 layers of header groups
+*   - reorder columns/records
+*   - hidden searches could not be clearned by the user
+*   - problem with .set() and arrays, array get extended too, but should be replaced
+*   - move events into prototype
+*   - add grid.focus()
+*   - add showExtra, KickIn Infinite scroll when so many records
+*   - after edit stay on the same record option
 *
 * == 1.4 changes
-*    - for search fields one should be able to pass w2field options
-*    - add enum to advanced search fields
-*    - editable fields -> LIST type is not working
-*    - search-logic -> searchLogic
-*    - new: refreshRow(recid) - should it be part of refresh?
-*    - new: refreshCell(recid, field) - should it be part of refresh?
-*    - removed: getSelection().removeAllRanges() - see https://github.com/vitmalina/w2ui/issues/323
-*    - new: reorderColumns
-*    - removed name from the POST
-*    - rename: markSearchResults -> markSearch
-*    - refactored inline editing
-*    - new: getCellValue(ind, col_ind, [summary])
-*    - refactored selection
-*    - removed: record.selected
-*    - new: nextCell, prevCell, nextRow, prevRow
-*    - new: editChange(el, index, column, event)
-*    - new: method - overwrite default ajax method (see also w2utils.settings.RESTfull)
-*    - rename: onSave -> onSubmit, onSaved -> onSave, just like in the form
-*    - new: recid - if id of the data is different from recid
-*    - new: parser - to converd data received from the server
-*    - change: rec.changes = {} and removed rec.changed
-*    - record.style can be a string or an object (for cell formatting)
-*    - col.resizable = true by default
-*    - new: prepareData();
-*    - context menu similar to sidebar's
-*    - find will return array or recids not objects
+*   - for search fields one should be able to pass w2field options
+*   - add enum to advanced search fields
+*   - editable fields -> LIST type is not working
+*   - search-logic -> searchLogic
+*   - new: refreshRow(recid) - should it be part of refresh?
+*   - new: refreshCell(recid, field) - should it be part of refresh?
+*   - removed: getSelection().removeAllRanges() - see https://github.com/vitmalina/w2ui/issues/323
+*   - new: reorderColumns
+*   - removed name from the POST
+*   - rename: markSearchResults -> markSearch
+*   - refactored inline editing
+*   - new: getCellValue(ind, col_ind, [summary])
+*   - refactored selection
+*   - removed: record.selected
+*   - new: nextCell, prevCell, nextRow, prevRow
+*   - new: editChange(el, index, column, event)
+*   - new: method - overwrite default ajax method (see also w2utils.settings.dataType)
+*   - rename: onSave -> onSubmit, onSaved -> onSave, just like in the form
+*   - new: recid - if id of the data is different from recid
+*   - new: parser - to converd data received from the server
+*   - change: rec.changes = {} and removed rec.changed
+*   - record.style can be a string or an object (for cell formatting)
+*   - col.resizable = true by default
+*   - new: prepareData();
+*   - context menu similar to sidebar's
+*   - find will return array or recids not objects
 *
 ************************************************************************/
 
@@ -159,7 +159,7 @@
             searchIds : [],
             selection : {
                 indexes : [],
-                columns : {},
+                columns : {}
             },
             multi       : false,
             scrollTop   : 0,
@@ -380,7 +380,6 @@
                 before++;
                 added++;
             }
-            this.initColumnOnOff();
             this.refresh();
             return added;
         },
@@ -392,7 +391,6 @@
                     if (this.columns[r].field == arguments[a]) { this.columns.splice(r, 1); removed++; }
                 }
             }
-            this.initColumnOnOff();
             this.refresh();
             return removed;
         },
@@ -410,8 +408,9 @@
             var effected = 0;
             for (var a = 0; a < arguments.length; a++) {
                 for (var r = this.columns.length-1; r >= 0; r--) {
-                    if (this.columns[r].field == arguments[a]) {
-                        this.columns[r].hidden = !this.columns[r].hidden;
+                    var col = this.columns[r];
+                    if (col.field == arguments[a]) {
+                        col.hidden = !col.hidden;
                         effected++;
                     }
                 }
@@ -424,8 +423,10 @@
             var shown = 0;
             for (var a = 0; a < arguments.length; a++) {
                 for (var r = this.columns.length-1; r >= 0; r--) {
-                    if (this.columns[r].field == arguments[a] && this.columns[r].hidden !== false) {
-                        this.columns[r].hidden = false;
+                    var col = this.columns[r];
+                    if (col.gridMinWidth) delete col.gridMinWidth;
+                    if (col.field == arguments[a] && col.hidden !== false) {
+                        col.hidden = false;
                         shown++;
                     }
                 }
@@ -438,8 +439,9 @@
             var hidden = 0;
             for (var a = 0; a < arguments.length; a++) {
                 for (var r = this.columns.length-1; r >= 0; r--) {
-                    if (this.columns[r].field == arguments[a] && this.columns[r].hidden !== true) {
-                        this.columns[r].hidden = true;
+                    var col = this.columns[r];
+                    if (col.field == arguments[a] && col.hidden !== true) {
+                        col.hidden = true;
                         hidden++;
                     }
                 }
@@ -1223,9 +1225,9 @@
                         if (value != '') {
                             var op  = 'contains';
                             var val = value;
-                            if (w2utils.isInt(value)) op = 'is';
-                            if (['date', 'time'].indexOf(search.type) != -1) op = 'is';
+                            if (['date', 'time', 'list'].indexOf(search.type) != -1) op = 'is';
                             if (search.type == 'int' && value != '') {
+                                op = 'is';
                                 if (String(value).indexOf('-') != -1) {
                                     var tmp = value.split('-');
                                     if (tmp.length == 2) {
@@ -1465,7 +1467,6 @@
                 this.last.scrollTop  = 0;
                 this.last.scrollLeft = 0;
                 $('#grid_'+ this.name +'_records').prop('scrollTop',  0);
-                this.initColumnOnOff();
                 this.reload();
             } else {
                 console.log('ERROR: grid.skip() can only be called when you have remote data source.');
@@ -1536,29 +1537,51 @@
                 }
             }
             if (this.last.xhr) try { this.last.xhr.abort(); } catch (e) {};
-            var xhr_type = 'GET';
+            // URL
             var url = (typeof eventData.url != 'object' ? eventData.url : eventData.url.get);
-            if (params.cmd == 'save-records') {
-                if (typeof eventData.url == 'object') url = eventData.url.save;
-                xhr_type = 'PUT';  // so far it is always update
+            if (params.cmd == 'save-records' && typeof eventData.url == 'object')   url = eventData.url.save;
+            if (params.cmd == 'delete-records' && typeof eventData.url == 'object') url = eventData.url.remove;
+            // ajax ptions
+            var ajaxOptions = {
+                type     : 'POST',
+                url      : url,
+                data     : eventData.postData, 
+                dataType : 'text'  // expected data type from server
+            };
+            if (w2utils.settings.dataType == 'HTTP') {
+                ajaxOptions.data = (typeof ajaxOptions.data == 'object' ? String($.param(ajaxOptions.data, false)).replace(/%5B/g, '[').replace(/%5D/g, ']') : ajaxOptions.data);
             }
-            if (params.cmd == 'delete-records') {
-                if (typeof eventData.url == 'object') url = eventData.url.remove;
-                xhr_type = 'DELETE';
+            if (w2utils.settings.dataType == 'RESTFULL') {
+                ajaxOptions.type = 'GET';
+                if (params.cmd == 'save-records')   ajaxOptions.type = 'PUT';  // so far it is always update
+                if (params.cmd == 'delete-records') ajaxOptions.type = 'DELETE';
+                ajaxOptions.data = (typeof ajaxOptions.data == 'object' ? String($.param(ajaxOptions.data, false)).replace(/%5B/g, '[').replace(/%5D/g, ']') : ajaxOptions.data);
             }
-            if (!w2utils.settings.RESTfull) xhr_type = 'POST';
-            if (this.method) xhr_type = this.method;
+            if (w2utils.settings.dataType == 'JSON') {
+                ajaxOptions.type        = 'POST';
+                ajaxOptions.data        = JSON.stringify(ajaxOptions.data);
+                ajaxOptions.contentType = 'application/json';
+            }
+            if (this.method) ajaxOptions.type = this.method;
+
             this.last.xhr_cmd   = params.cmd;
             this.last.xhr_start = (new Date()).getTime();
-            this.last.xhr = $.ajax({
-                type     : xhr_type,
-                url      : url,
-                data     : (typeof eventData.postData == 'object' ? String($.param(eventData.postData, false)).replace(/%5B/g, '[').replace(/%5D/g, ']') : eventData.postData),
-                dataType : 'text',
-                complete : function (xhr, status) {
+            this.last.xhr = $.ajax(ajaxOptions)
+                .done(function (data, status, xhr) {
                     obj.requestComplete(status, cmd, callBack);
-                }
-            });
+                })
+                .fail(function (xhr, status, error) {
+                    // trigger event
+                    var errorObj = { status: status, error: error, rawResponseText: xhr.responseText };
+                    var eventData2 = obj.trigger({ phase: 'before', type: 'error', error: errorObj, xhr: xhr });
+                    if (eventData2.isCancelled === true) return;
+                    // default behavior
+                    console.log('ERROR: server communication failed. The server should return', 
+                        { status: 'success', total: 5, records: [{ recid: 1, field: 'value' }] }, 'OR', { status: 'error', message: 'error message' },
+                        ', instead the AJAX request produced this: ', errorObj);
+                    // event after
+                    obj.trigger($.extend(eventData2, { phase: 'after' }));
+                });
             if (cmd == 'get-records') {
                 // event after
                 this.trigger($.extend(eventData, { phase: 'after' }));
@@ -1988,7 +2011,7 @@
             }
         },
 
-        delete: function (force) {
+        "delete": function (force) {
             var obj = this;
             // event before
             var eventData = this.trigger({ phase: 'before', target: this.name, type: 'delete', force: force });
@@ -2002,7 +2025,6 @@
                     title : w2utils.lang('Delete Confirmation'), 
                     msg   : obj.msgDelete, 
                     callBack: function (result) {
-                        console.log('result', result);
                         if (result == 'Yes') w2ui[obj.name].delete(true);
                     }
                 });
@@ -2193,7 +2215,7 @@
             switch (key) {
                 case 8:  // backspace
                 case 46: // delete
-                    obj.delete();
+                    obj["delete"]();
                     cancel = true;
                     event.stopPropagation();
                     break;
@@ -2476,7 +2498,7 @@
                 case 88: // x - cut
                     if (empty) break;
                     if (event.ctrlKey || event.metaKey) {
-                        setTimeout(function () { obj.delete(true); }, 100);
+                        setTimeout(function () { obj["delete"](true); }, 100);
                     }
                 case 67: // c - copy
                     if (empty) break;
@@ -3253,7 +3275,14 @@
             if (!this.show.toolbarColumns) return;
             var obj = this;
             var col_html =  '<div class="w2ui-col-on-off">'+
-                            '<table>';
+                            '<table><tr>'+
+                            '<td style="width: 30px">'+
+                            '    <input id="grid_'+ this.name +'_column_ln_check" type="checkbox" tabIndex="-1" '+ (obj.show.lineNumbers ? 'checked' : '') +
+                            '        onclick="w2ui[\''+ obj.name +'\'].columnOnOff(this, event, \'line-numbers\');">'+
+                            '</td>'+
+                            '<td onclick="w2ui[\''+ obj.name +'\'].columnOnOff(this, event, \'line-numbers\'); $(\'#w2ui-overlay\')[0].hide();">'+
+                            '    <label for="grid_'+ this.name +'_column_ln_check">'+ w2utils.lang('Line #') +'</label>'+
+                            '</td></tr>';
             for (var c in this.columns) {
                 var col = this.columns[c];
                 var tmp = this.columns[c].caption;
@@ -3281,10 +3310,7 @@
                         '    </div>'+
                         '</td></tr>';
             }
-            col_html +=    '<tr><td colspan="2" onclick="w2ui[\''+ obj.name +'\'].columnOnOff(this, event, \'line-numbers\'); $(\'#w2ui-overlay\')[0].hide();">'+
-                        '    <div style="cursor: pointer; padding: 4px 8px; cursor: default">'+ w2utils.lang('Toggle Line Numbers') +'</div>'+
-                        '</td></tr>'+
-                        '<tr><td colspan="2" onclick="w2ui[\''+ obj.name +'\'].columnOnOff(this, event, \'resize\'); $(\'#w2ui-overlay\')[0].hide();">'+
+            col_html += '<tr><td colspan="2" onclick="w2ui[\''+ obj.name +'\'].columnOnOff(this, event, \'resize\'); $(\'#w2ui-overlay\')[0].hide();">'+
                         '    <div style="cursor: pointer; padding: 4px 8px; cursor: default">'+ w2utils.lang('Reset Column Size') + '</div>'+
                         '</td></tr>';
             col_html += "</table></div>";
@@ -3296,7 +3322,7 @@
          * @param box, grid object
          * @returns {{remove: Function}} contains a closure around all events to ensure they are removed from the dom
          */
-        initColumnDrag: function( box ){
+        initColumnDrag: function ( box ) {
             //throw error if using column groups
             if ( this.columnGroups && this.columnGroups.length ) throw 'Draggable columns are not currently supported with column groups.';
 
@@ -3581,7 +3607,6 @@
                 }
                 hide = false;
             }
-            this.initColumnOnOff();
             if (hide) {
                 setTimeout(function () {
                     $().w2overlay('', { name: 'searches-'+ this.name });
@@ -3607,7 +3632,6 @@
                 }
                 if (this.show.toolbarColumns) {
                     this.toolbar.items.push($.extend(true, {}, this.buttons['columns']));
-                    this.initColumnOnOff();
                 }
                 if (this.show.toolbarReload || this.show.toolbarColumn) {
                     this.toolbar.items.push({ type: 'break', id: 'w2ui-break0' });
@@ -3623,7 +3647,7 @@
                         '            onchange="'+
                         '                var val = this.value; '+
                         '                var fld = $(this).data(\'w2field\'); '+
-                        '                if (fld) val = fld.clean(val); '+
+                        '                if (fld) val = fld.clean(val);'+
                         '                w2ui[\''+ this.name +'\'].search(w2ui[\''+ this.name +'\'].last.field, val); '+
                         '            ">'+
                         '    </td>'+
@@ -3676,13 +3700,7 @@
                             obj.trigger($.extend(eventData2, { phase: 'after' }));
                             break;
                         case 'w2ui-column-on-off':
-                            for (var c in obj.columns) {
-                                if (obj.columns[c].hidden) {
-                                    $("#grid_"+ obj.name +"_column_"+ c + "_check").prop("checked", false);
-                                } else {
-                                    $("#grid_"+ obj.name +"_column_"+ c + "_check").prop('checked', true);
-                                }
-                            }
+                            obj.initColumnOnOff();
                             obj.initResize();
                             obj.resize();
                             break;
@@ -3717,7 +3735,7 @@
                             obj.trigger($.extend(eventData, { phase: 'after' }));
                             break;
                         case 'w2ui-delete':
-                            obj.delete();
+                            obj["delete"]();
                             break;
                         case 'w2ui-save':
                             obj.save();
@@ -3939,7 +3957,7 @@
                 var restart = false;
                 for (var i = 0; i < this.columns.length; i++) {
                     var col = this.columns[i];
-                    if (typeof col.gridMinWidth != 'undefined') {
+                    if (col.gridMinWidth > 0) {
                         if (col.gridMinWidth > width_box && col.hidden !== true) {
                             col.hidden = true;
                             restart = true;
@@ -4080,7 +4098,7 @@
                 if (typeof s.outTag  == 'undefined') s.outTag     = '';
                 if (typeof s.type    == 'undefined') s.type     = 'text';
                 if (['text', 'alphanumeric', 'combo'].indexOf(s.type) != -1) {
-                    var operator =  '<select id="grid_'+ this.name +'_operator_'+ i +'">'+
+                    var operator =  '<select id="grid_'+ this.name +'_operator_'+ i +'" onclick="event.stopPropagation();">'+
                         '    <option value="is">'+ w2utils.lang('is') +'</option>'+
                         '    <option value="begins">'+ w2utils.lang('begins') +'</option>'+
                         '    <option value="contains">'+ w2utils.lang('contains') +'</option>'+
@@ -4089,19 +4107,19 @@
                 }
                 if (['int', 'float', 'money', 'currency', 'percent', 'date', 'time'].indexOf(s.type) != -1) {
                     var operator =  '<select id="grid_'+ this.name +'_operator_'+ i +'" '+
-                        '        onchange="w2ui[\''+ this.name + '\'].initOperator(this, '+ i +');">'+
+                        '        onchange="w2ui[\''+ this.name + '\'].initOperator(this, '+ i +');" onclick="event.stopPropagation();">'+
                         '    <option value="is">'+ w2utils.lang('is') +'</option>'+
                         (['int'].indexOf(s.type) != -1 ? '<option value="in">'+ w2utils.lang('in') +'</option>' : '') +
                         '<option value="between">'+ w2utils.lang('between') +'</option>'+
                         '</select>';
                 }
                 if (['select', 'list', 'hex'].indexOf(s.type) != -1) {
-                    var operator =  '<select id="grid_'+ this.name +'_operator_'+ i +'">'+
+                    var operator =  '<select id="grid_'+ this.name +'_operator_'+ i +'" onclick="event.stopPropagation();">'+
                         '    <option value="is">'+ w2utils.lang('is') +'</option>'+
                         '</select>';
                 }
                 if (['enum'].indexOf(s.type) != -1) {
-                    var operator =  '<select id="grid_'+ this.name +'_operator_'+ i +'">'+
+                    var operator =  '<select id="grid_'+ this.name +'_operator_'+ i +'" onclick="event.stopPropagation();">'+
                         '    <option value="in">'+ w2utils.lang('in') +'</option>'+
                         '</select>';
                 }
@@ -4137,7 +4155,7 @@
                         break;
 
                     case 'select':
-                        html += '<select rel="search" id="grid_'+ this.name +'_field_'+ i +'" name="'+ s.field +'" '+ s.inTag +'></select>';
+                        html += '<select rel="search" id="grid_'+ this.name +'_field_'+ i +'" name="'+ s.field +'" '+ s.inTag +'  onclick="event.stopPropagation();"></select>';
                         break;
 
                 }

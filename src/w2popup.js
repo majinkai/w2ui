@@ -6,13 +6,13 @@
 *   - Dependencies: jQuery, w2utils
 *
 * == NICE TO HAVE ==
-*     - transition should include title, body and buttons, not just body
+*   - transition should include title, body and buttons, not just body
 *
 * == 1.4 changes
-*    - deleted getSelection().removeAllRanges() - see https://github.com/vitmalina/w2ui/issues/323
-*    - new: w2popup.status can be ['closed', 'opening', 'open', 'closing', resizing', 'moving']
-*    - add lock method() to lock popup content
-*    - fixed bug with max width/height of message
+*   - deleted getSelection().removeAllRanges() - see https://github.com/vitmalina/w2ui/issues/323
+*   - new: w2popup.status can be ['closed', 'opening', 'open', 'closing', resizing', 'moving']
+*   - add lock method() to lock popup content
+*   - fixed bug with max width/height of message
 *
 ************************************************************************/
 
@@ -293,7 +293,7 @@ var w2popup = {};
                     '-ms-transition': 'none',
                     '-ms-transform': 'translate(0px, 0px)',
                     '-o-transition': 'none',
-                    '-o-transform': 'translate(0px, 0px)',
+                    '-o-transform': 'translate(0px, 0px)'
                 });
                 tmp.resizing = false;
                 $(document).off('mousemove', tmp.mvMove);
@@ -437,7 +437,7 @@ var w2popup = {};
             if (typeof html != 'undefined' && html != null) {
                 popup(html, selector);
             } else {
-                $.get(url, function (data, status, obj) {
+                $.get(url, function (data, status, obj) { // should always be $.get as it is template
                     popup(obj.responseText, selector);
                     $('#w2ui-popup').data(url, obj.responseText); // remember for possible future purposes
                 });
@@ -468,7 +468,7 @@ var w2popup = {};
             if (parseInt(options.width) < 10)  options.width  = 10;
             if (parseInt(options.height) < 10) options.height = 10;
             if (typeof options.hideOnClick == 'undefined') options.hideOnClick = false;
-            var poptions = $('#w2ui-popup').data('options')
+            var poptions = $('#w2ui-popup').data('options') || {};
             if (typeof options.width == 'undefined' || options.width > poptions.width - 10) options.width = poptions.width - 10;
             if (typeof options.height == 'undefined' || options.height > poptions.height - 40) options.height = poptions.height - 40; // title is 30px or so
 
@@ -700,12 +700,12 @@ var w2confirm = function (obj, callBack) {
 
         if (btn_yes) {
             if (btn_yes.text)  w2confirm_yes_text = w2utils.lang(btn_yes.text);
-            if (btn_yes.class) w2confirm_yes_class = btn_yes.class;
+            if (btn_yes.class) w2confirm_yes_class = btn_yes["class"];
             if (btn_yes.style) w2confirm_yes_style = btn_yes.style;
         }
         if (btn_no) {
             if (btn_no.text)  w2confirm_no_text = w2utils.lang(btn_no.text);
-            if (btn_no.class) w2confirm_no_class = btn_no.class;
+            if (btn_no.class) w2confirm_no_class = btn_no["class"];
             if (btn_no.style) w2confirm_no_style = btn_no.style;
         }
 

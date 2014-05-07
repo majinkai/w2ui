@@ -6,19 +6,19 @@
 *   - Dependencies: jQuery, w2utils, w2fields, w2tabs, w2toolbar, w2alert
 *
 * == NICE TO HAVE ==
-*    - refresh(field) - would refresh only one field
-*    - include delta on save
-*    - create an example how to do cascadic dropdown
-*    - form should read <select> <options> into items
-*    - two way data bindings
-*    - verify validation of fields
-*    - when field is blank, set record.field = null
-*    - show/hide a field
+*   - refresh(field) - would refresh only one field
+*   - include delta on save
+*   - create an example how to do cascadic dropdown
+*   - form should read <select> <options> into items
+*   - two way data bindings
+*   - verify validation of fields
+*   - when field is blank, set record.field = null
+*   - show/hide a field
 *
 * == 1.4 Changes ==
-*    - refactored for the new fields
-*    - added getChanges() - not complete
-*    - change: get() w/o params returns all field names
+*   - refactored for the new fields
+*   - added getChanges() - not complete
+*   - change: get() w/o params returns all field names
 *
 ************************************************************************/
 
@@ -119,7 +119,7 @@
             if (obj.length > 0) object.box = obj[0];
             // render if necessary
             if (object.formURL != '') {
-                $.get(object.formURL, function (data) {
+                $.get(object.formURL, function (data) { // should always be $.get as it is template
                     object.formHTML = data;
                     object.isGenerated = true;
                     if ($(object.box).length != 0 || data.length != 0) {
@@ -262,6 +262,7 @@
                         break;
                     case 'date':
                         // format date before submit
+                        if (!field.options.format) field.options.format = w2utils.settings.date_format;
                         if (this.record[field.name] && !w2utils.isDate(this.record[field.name], field.options.format)) {
                             errors.push({ field: field, error: w2utils.lang('Not a valid date') + ': ' + field.options.format });
                         } else {
@@ -336,7 +337,6 @@
             var params = {};
             // add list params
             params['cmd']   = 'get-record';
-            params['name']  = this.name;
             params['recid'] = this.recid;
             // append other params
             $.extend(params, this.postData);
@@ -352,12 +352,26 @@
             var url = eventData.url;
             if (typeof eventData.url == 'object' && eventData.url.get) url = eventData.url.get;
             if (this.last.xhr) try { this.last.xhr.abort(); } catch (e) {};
-            this.last.xhr = $.ajax({
-                type     : 'GET',
+            var ajaxOptions = {
+                type     : 'POST',
                 url      : url,
-                data     : String($.param(eventData.postData, false)).replace(/%5B/g, '[').replace(/%5D/g, ']'),
-                dataType : 'text',
-                complete : function (xhr, status) {
+                data     : eventData.postData, 
+                dataType : 'text'   // expected from server
+            };
+            if (w2utils.settings.dataType == 'HTTP') {
+                ajaxOptions.data = String($.param(ajaxOptions.data, false)).replace(/%5B/g, '[').replace(/%5D/g, ']');
+            }
+            if (w2utils.settings.dataType == 'RESTFULL') {
+                ajaxOptions.type = 'GET';
+                ajaxOptions.data = String($.param(ajaxOptions.data, false)).replace(/%5B/g, '[').replace(/%5D/g, ']');
+            }
+            if (w2utils.settings.dataType == 'JSON') {
+                ajaxOptions.type        = 'POST';
+                ajaxOptions.data        = JSON.stringify(ajaxOptions.data);
+                ajaxOptions.contentType = 'application/json';
+            }
+            this.last.xhr = $.ajax(ajaxOptions)
+                .done(function (data, status, xhr) {
                     obj.unlock();
                     // event before
                     var eventData = obj.trigger({ phase: 'before', target: obj.name, type: 'load', xhr: xhr, status: status });
@@ -407,8 +421,19 @@
                     obj.refresh();
                     // call back
                     if (typeof callBack == 'function') callBack(data);
-                }
-            });
+                })
+                .fail(function (xhr, status, error) {
+                    // trigger event
+                    var errorObj = { status: status, error: error, rawResponseText: xhr.responseText };
+                    var eventData2 = obj.trigger({ phase: 'before', type: 'error', error: errorObj, xhr: xhr });
+                    if (eventData2.isCancelled === true) return;
+                    // default behavior
+                    console.log('ERROR: server communication failed. The server should return', 
+                        { status: 'success', items: [{ id: 1, text: 'item' }] }, 'OR', { status: 'error', message: 'error message' },
+                        ', instead the AJAX request produced this: ', errorObj);
+                    // event after
+                    obj.trigger($.extend(eventData2, { phase: 'after' }));
+                });
             // event after
             this.trigger($.extend(eventData, { phase: 'after' }));
         },
@@ -444,7 +469,6 @@
                 var params = {};
                 // add list params
                 params['cmd']   = 'save-record';
-                params['name']  = obj.name;
                 params['recid'] = obj.recid;
                 // append other params
                 $.extend(params, obj.postData);
@@ -460,11 +484,12 @@
                 var url = eventData.url;
                 if (typeof eventData.url == 'object' && eventData.url.save) url = eventData.url.save;
                 if (obj.last.xhr) try { obj.last.xhr.abort(); } catch (e) {};
-                obj.last.xhr = $.ajax({
-                    type     : (w2utils.settings.RESTfull ? (obj.recid == 0 ? 'POST' : 'PUT') : 'POST'),
+
+                var ajaxOptions = {
+                    type     : 'POST',
                     url      : url,
-                    data     : String($.param(eventData.postData, false)).replace(/%5B/g, '[').replace(/%5D/g, ']'),
-                    dataType : 'text',
+                    data     : eventData.postData, 
+                    dataType : 'text',   // expected from server
                     xhr : function() {
                         var xhr = new window.XMLHttpRequest();
                         // upload
@@ -476,9 +501,23 @@
                         }, false);
                         return xhr;
                     },
-                    complete : function (xhr, status) {
-                        obj.unlock();
+                };
+                if (w2utils.settings.dataType == 'HTTP') {
+                    ajaxOptions.data = String($.param(ajaxOptions.data, false)).replace(/%5B/g, '[').replace(/%5D/g, ']');
+                }
+                if (w2utils.settings.dataType == 'RESTFULL') {
+                    if (obj.recid != 0) ajaxOptions.type = 'PUT';
+                    ajaxOptions.data = String($.param(ajaxOptions.data, false)).replace(/%5B/g, '[').replace(/%5D/g, ']');
+                }
+                if (w2utils.settings.dataType == 'JSON') {
+                    ajaxOptions.type        = 'POST';
+                    ajaxOptions.data        = JSON.stringify(ajaxOptions.data);
+                    ajaxOptions.contentType = 'application/json';
+                }
 
+                obj.last.xhr = $.ajax(ajaxOptions)
+                    .done(function (data, status, xhr) {
+                        obj.unlock();
                         // event before
                         var eventData = obj.trigger({ phase: 'before', target: obj.name, type: 'save', xhr: xhr, status: status });
                         if (eventData.isCancelled === true) {
@@ -526,8 +565,19 @@
                         obj.refresh();
                         // call back
                         if (typeof callBack == 'function') callBack(data);
-                    }
-                });
+                    })
+                    .fail(function (xhr, status, error) {
+                        // trigger event
+                        var errorObj = { status: status, error: error, rawResponseText: xhr.responseText };
+                        var eventData2 = obj.trigger({ phase: 'before', type: 'error', error: errorObj, xhr: xhr });
+                        if (eventData2.isCancelled === true) return;
+                        // default behavior
+                        console.log('ERROR: server communication failed. The server should return', 
+                            { status: 'success' }, 'OR', { status: 'error', message: 'error message' }, 
+                            ', instead the AJAX request produced this: ', errorObj);
+                        // event after
+                        obj.trigger($.extend(eventData2, { phase: 'after' }));
+                    });
                 // event after
                 obj.trigger($.extend(eventData, { phase: 'after' }));
             }, 50);

@@ -6,38 +6,38 @@
 *   - Dependencies: jQuery, w2utils
 *
 * == NICE TO HAVE ==
-*    - upload (regular files)
-*    - BUG with prefix/postfix and arrows (test in different contexts)
-*    - prefix and suffix are slow (100ms or so)
-*    - multiple date selection
-*    - month selection, year selections
-*    - arrows no longer work (for int)
-*    - add postData for autocomplete
-*    - form to support custom types
-*    - bug: if input is hidden and then enum is applied, then when it becomes visible, it will be 110px
+*   - upload (regular files)
+*   - BUG with prefix/postfix and arrows (test in different contexts)
+*   - prefix and suffix are slow (100ms or so)
+*   - multiple date selection
+*   - month selection, year selections
+*   - arrows no longer work (for int)
+*   - add postData for autocomplete
+*   - form to support custom types
+*   - bug: if input is hidden and then enum is applied, then when it becomes visible, it will be 110px
 *
 * == 1.4 Changes ==
-*    - select - for select, list - for drop down (needs this in grid)
-*    - $().addType() - changes sligtly (this.el)
-*    - $().removeType() - new method
-*    - enum add events: onLoad, onRequest, onDelete,  for already selected elements
-*    - enum - refresh happens on each key press even if not needed (for speed)
-*    - rewrire everythin in objects (w2ftext, w2fenum, w2fdate)
-*    - render calendar to the div
-*    - added .btn with colors
-*    - added enum.style and file.style attributes
-*    - test all fields as Read Only
-*    - added openOnFocus
-*    - deprecated -- change: showAll -> applyFilter
-*    - color: select with keyboard
-*    - enum: addNew event
-*    - added icon and onIconClick
-*    - new: clearCache
-*    - easy way to add icons
-*    - easy way to navigate month/year in dates
-*    - added step for numeric inputs
-*    - changed prepopulate -> minLength
-*    - added options.postData
+*   - select - for select, list - for drop down (needs this in grid)
+*   - $().addType() - changes sligtly (this.el)
+*   - $().removeType() - new method
+*   - enum add events: onLoad, onRequest, onDelete,  for already selected elements
+*   - enum - refresh happens on each key press even if not needed (for speed)
+*   - rewrire everythin in objects (w2ftext, w2fenum, w2fdate)
+*   - render calendar to the div
+*   - added .btn with colors
+*   - added enum.style and file.style attributes
+*   - test all fields as Read Only
+*   - added openOnFocus
+*   - deprecated -- change: showAll -> applyFilter
+*   - color: select with keyboard
+*   - enum: addNew event
+*   - added icon and onIconClick
+*   - new: clearCache
+*   - easy way to add icons
+*   - easy way to navigate month/year in dates
+*   - added step for numeric inputs
+*   - changed prepopulate -> minLength
+*   - added options.postData
 *
 ************************************************************************/
 
@@ -403,7 +403,7 @@
                         onAdd         : null,     // when an item is added
                         onRemove      : null,     // when an item is removed
                         onMouseOver   : null,     // when an item is mouse over
-                        onMouseOut    : null,     // when an item is mouse out
+                        onMouseOut    : null      // when an item is mouse out
                     };
                     options = $.extend({}, defaults, options, {
                         align         : 'both',    // same width as control
@@ -462,8 +462,11 @@
             if (this.type == 'list') {
                 $(this.el).removeClass('w2ui-select');
             }
+            if (['date', 'time'].indexOf(this.type) != -1) {
+                if ($(this.el).attr('placeholder') == options.format) $(this.el).attr('placeholder', '');
+            }
             this.type = 'clear';
-            var tmp      = $(this.el).data('tmp');
+            var tmp = $(this.el).data('tmp');
             if (!this.tmp) return;
             // restore paddings
             if (typeof tmp != 'undefined') {
@@ -1202,15 +1205,22 @@
                     $.extend(postData, options.postData);
                     var eventData = obj.trigger({ phase: 'before', type: 'request', target: obj.el, url: url, postData: postData });
                     if (eventData.isCancelled === true) return;
-                    url         = eventData.url;
+                    url      = eventData.url;
                     postData = eventData.postData;
                     // console.log('REMOTE SEARCH:', search);
                     if (obj.tmp.xhr) obj.tmp.xhr.abort();
-                    obj.tmp.xhr = $.ajax({
-                            type : 'POST',
-                            url  : url,
-                            data : postData
-                        })
+                    var ajaxOptions = {
+                        type     : 'GET',
+                        url      : url,
+                        data     : postData,
+                        dataType : 'JSON' // expected from server
+                    };
+                    if (w2utils.settings.dataType == 'JSON') {
+                        ajaxOptions.type        = 'POST';
+                        ajaxOptions.data        = JSON.stringify(ajaxOptions.data);
+                        ajaxOptions.contentType = 'application/json';
+                    }
+                    obj.tmp.xhr = $.ajax(ajaxOptions)
                         .done(function (data, status, xhr) {
                             // trigger event
                             var eventData2 = obj.trigger({ phase: 'before', type: 'load', target: obj.el, search: postData.search, data: data, xhr: xhr });
@@ -1235,13 +1245,15 @@
                             // event after
                             obj.trigger($.extend(eventData2, { phase: 'after' }));
                         })
-                        .error(function (xhr, status, exceptionThrown) {
+                        .fail(function (xhr, status, error) {
                             // trigger event
-                            var errorObj = { status: status, exceptionThrown: exceptionThrown, rawResponseText: xhr.responseText };
+                            var errorObj = { status: status, error: error, rawResponseText: xhr.responseText };
                             var eventData2 = obj.trigger({ phase: 'before', type: 'error', target: obj.el, search: search, error: errorObj, xhr: xhr });
                             if (eventData2.isCancelled === true) return;
                             // default behavior
-                            console.log('ERROR: server communication failed. The server should return', { status: 'success', items: [{ id: 1, text: 'item' }] }, ', instead the AJAX request produced this: ', errorObj);
+                            console.log('ERROR: server communication failed. The server should return', 
+                                { status: 'success', items: [{ id: 1, text: 'item' }] }, 'OR', { status: 'error', message: 'error message' },
+                                ', instead the AJAX request produced this: ', errorObj);
                             // reset stats
                             obj.clearCache();
                             // event after
@@ -1745,7 +1757,7 @@
                     "margin-top"    : $(obj.el).css('margin-top'),
                     "margin-left"   : (parseInt($(obj.el).css('margin-left')) + parseInt($(obj.el).css('padding-left'))) + 'px',
                     "margin-bottom" : $(obj.el).css('margin-bottom'),
-                    "margin-right"  : $(obj.el).css('margin-right'),
+                    "margin-right"  : $(obj.el).css('margin-right')
                 })
                 .find('input')
                 .css({
